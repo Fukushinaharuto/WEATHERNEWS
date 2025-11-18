@@ -19,6 +19,9 @@ down:
 restart:
 	docker compose down up
 
+exec:
+	docker compose exec $(filter-out $@,$(MAKECMDGOALS))
+
 # -----------------------
 # Laravel
 # -----------------------
