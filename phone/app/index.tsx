@@ -1,22 +1,23 @@
-import { Image, View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import SafeScreen from "@/components/safe-screen";
+import { LogoIcon, starts } from "@/components/icons";
 
 
 export default function Index() {
   const cards = [
     {
-      imageUrl: require("../assets/images/public/clothes.png"),
+      icon: starts.ClothesIcon,
       title: "服装の参考に",
       description: "今、みんなが何を着ているのか",
     },
     {
-      imageUrl: require("../assets/images/public/umbrella.png"),
+      icon: starts.RainIcon,
       title: "傘の判断に", 
       description: "実際に傘が必要だったかどうか",
     },
     {
-      imageUrl: require("../assets/images/public/train.png"),
+      icon: starts.TrainIcon,
       title: "移動の計画に",
       description: "リアルタイムの混雑や遅延情報",
     },
@@ -25,14 +26,7 @@ export default function Index() {
   return (
     <SafeScreen changeBackgroundColor="darkBlue">
       <View className="flex justify-center items-center">
-        <Image
-          source={require("../assets/images/public/logo.png")}
-          style={{
-            width: 80,
-            height: 80,
-          }}
-          resizeMode="contain"
-        />
+        <LogoIcon size={80} color="white" />
         <Text className="text-white text-3xl mt-6 font-bold">行動で見る天気</Text>
         <View className="flex justify-center items-center my-6">
           <Text className="text-white/80">天気予報だけじゃない。</Text>
@@ -45,14 +39,7 @@ export default function Index() {
               key={index}
               className="bg-white/10 w-full rounded-xl p-4 mt-4"
             >
-              <Image
-                source={card.imageUrl}
-                style={{
-                  width: 40,
-                  height: 40,
-                }}
-                resizeMode="contain"
-              />
+              <card.icon size={40} color="white" />
               <Text className="text-white text-xl font-bold">{card.title}</Text>
               <Text className="text-white/70 text-base mt-2">{card.description}</Text>
             </View>

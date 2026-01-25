@@ -1,0 +1,179 @@
+import SafeScreen from "@/components/safe-screen";
+import { ScrollView, View, Text, Image, TextInput, TouchableOpacity, Modal } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useState } from "react";
+import { colors } from "@/lib/colors";
+import { ImageAddIcon, categories, locations } from "@/components/icons";
+import * as ImagePicker from "expo-image-picker";
+import { ShowImageModal } from "@/components/shoImageModal";
+
+export default function AddScreen() {
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [message, setMessage] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [municipalities, setMunicipalities] = useState("渋谷・原宿");
+  const isPostEnabled =
+  selectedCategory !== "" && message.trim().length > 0;
+  const insets = useSafeAreaInsets();
+  const cards = [
+    {
+      id: "1",
+      name: "傘・雨",
+      style: "pr-2 pb-2",
+      icon: categories.RainIcon
+    },
+    {
+      id: "2",
+      name: "服装",
+      style: "pl-2 pb-2",
+      icon: categories.ClothesIcon
+    },
+    {
+      id: "3",
+      name: "移動",
+      style: "pr-2 pt-2",
+      icon: categories.MoveIcon
+    },
+    {
+      id: "4",
+      name: "外での活動",
+      style: "pl-2 pt-2",
+      icon: categories.SunIcon
+    },
+  ]
+
+  const pickImages = async () => {
+    const remaining = 4 - images.length;
+    if (remaining <= 0) return;
+  
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],    
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 1,
+    });
+  
+    if (!result.canceled) {
+      const uris = result.assets.map(asset => asset.uri);
+      setImages(prev => [...prev, ...uris]);
+    }
+  };
+  
+  return (
+    <>
+      <SafeScreen changeBackgroundColor="white">
+        <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+          className="gap-2 bg-white border-b border-borderColor px-4 pt-10 pb-6 z-10"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+          }}
+        >
+          <Text className="text-black text-2xl font-bold">今の状況を共有</Text>
+          <Text className="text-primaryLight text-sm">今の行動・判断を共有してください</Text>
+        </View>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingTop: Math.max(headerHeight - insets.top, 0),
+          }}
+        >  
+          <Text className="text-sm text-primary mt-5">カテゴリを選択</Text>
+          <View className="flex-row flex-wrap mt-4">
+            {cards.map((category) => {
+              const isSelected = selectedCategory === category.id;
+              return (
+                <TouchableOpacity
+                  key={category.id}
+                  onPress={() => setSelectedCategory(category.id)}
+                  className={`w-1/2 ${category.style}`}
+                >
+                  <View
+                    className={`justify-center items-center gap-2 rounded-2xl py-5 border ${
+                      isSelected
+                        ? "bg-primary border-primary"
+                        : "bg-white border-borderColor"
+                    }`}
+                  >
+                    <category.icon
+                      size={30}
+                      color={isSelected ? "white" : colors.primary}
+                    />
+                    <Text
+                      className={`text-sm ${
+                        isSelected ? "text-white" : "text-primary"
+                      }`}
+                    >
+                      {category.name}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text className="text-sm text-primary mt-5">メッセージ</Text>
+          <TextInput
+            className="bg-white rounded-2xl p-4 mt-4 h-36 border border-borderColor"
+            placeholder="例：薄手のパーカーでちょうど良かった"
+            placeholderTextColor={colors.textPlaceholder}
+            value={message}
+            onChangeText={setMessage}
+            multiline={true}                   
+            textAlignVertical="top"
+            numberOfLines={6}   
+          />
+          <TouchableOpacity
+            onPress={pickImages}
+            disabled={images.length >= 4}
+            className={`flex justify-center gap-3 items-center rounded-2xl py-8 mt-6 border-2
+              ${images.length >= 4 ? "border-borderColor opacity-40" : "border-borderColor"}
+            `}
+          >
+            <ImageAddIcon size={24} color={colors.primaryLight} />
+            <Text className="text-primaryLight text-sm">
+              画像を追加する（任意）<Text className="font-bold">{images.length}/4</Text>
+            </Text>
+          </TouchableOpacity>
+          {images.length > 0 && (
+            <View className="flex-row flex-wrap mt-4 gap-4 pl-1">
+              {images.map((uri) => (
+                <TouchableOpacity
+                  key={uri}
+                  onPress={() => setPreviewImage(uri)}
+                >
+                  <Image
+                    source={{ uri }}
+                    className="w-20 h-20 rounded-xl"
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          <View className="flex-row gap-3 justify-center items-center  bg-subLight rounded-2xl p-4 mt-8 border border-borderSubColor">
+            <locations.LocationIcon size={20} color={colors.mapIconBlue} />
+            <Text className="text-sub text-sm">投稿は <Text className="font-bold">{municipalities}エリア</Text> として共有されます</Text>
+          </View>
+          <TouchableOpacity 
+            disabled={!isPostEnabled}
+            className={`flex justify-center items-center rounded-2xl py-6 mt-8
+              ${isPostEnabled ? "bg-primary opacity-100" : "bg-primary opacity-40"}
+            `}
+          >
+            <Text className="text-white font-bold">投稿する</Text>
+          </TouchableOpacity>
+        </ScrollView>
+        
+      </SafeScreen>
+      <ShowImageModal
+        previewImage={previewImage}
+        setPreviewImage={setPreviewImage}
+        setImages={setImages}
+      />
+    </>
+  );
+}

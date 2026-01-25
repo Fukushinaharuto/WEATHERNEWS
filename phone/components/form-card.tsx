@@ -1,8 +1,11 @@
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { useState } from "react";
 import { Link } from "expo-router";
+import { login } from "@/lib/api/login";
+import { register } from "@/lib/api/register";
+import { colors } from "@/lib/colors";
 
-export default function FormCard() {
+export function FormCard() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -11,10 +14,16 @@ export default function FormCard() {
     { id: "login" as const, label: "ログイン" },
     { id: "register" as const, label: "新規登録" },
   ];
-  const colors = {textPlaceholder: "#90A1B9"};
-  const handleLogin = () => {
-    console.log(password, email, name);
+  const handleAuth = async() => {
+    if (activeTab === "login") {
+      const response = await login({email, password});
+      console.log(response);
+    } else {
+      const response = await register({name, email, password});
+      console.log(response);
+    }
   }
+  
   return (
     <View className="w-full justify-center items-center">
     <View className="bg-white/10 rounded-2xl w-full p-6">
@@ -73,7 +82,7 @@ export default function FormCard() {
         <TouchableOpacity className="bg-white rounded-md py-3">
           <Text 
             className="text-center font-bold text-primaryLight"
-            onPress={() => handleLogin()}
+            onPress={() => handleAuth()}
           >  
             {activeTab === "login" ? "ログイン" : "アカウント作成"}
           </Text>

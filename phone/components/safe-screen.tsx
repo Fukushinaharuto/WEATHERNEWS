@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ReactNode } from "react";
 import { LinearGradient } from "expo-linear-gradient";
+import { colors } from "@/lib/colors";
 
 type Props = {
   children: ReactNode;
@@ -14,17 +15,12 @@ export default function SafeScreen({
   changeBackgroundColor = "white",
 }: Props) {
   const insets = useSafeAreaInsets();
-  const colors = {
-    bgPrimary: "#45556C",
-    bgPrimaryLight: "#314158",
-    bgSecondary: "#F8FAFC"
-  };
 
   switch (changeBackgroundColor) {
     case "darkBlue":
       return (
         <LinearGradient
-        colors={[colors.bgPrimaryLight, colors.bgPrimary]}
+        colors={[colors.primary, colors.primaryLight]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={{
@@ -43,7 +39,7 @@ export default function SafeScreen({
         <View
           style={{
             flex: 1,
-            backgroundColor: colors.bgSecondary,
+            backgroundColor: colors.secondary,
             paddingTop: insets.top,
             paddingBottom: insets.bottom,
             paddingLeft: Math.max(insets.left, 20),

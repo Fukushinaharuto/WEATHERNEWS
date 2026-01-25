@@ -10,7 +10,11 @@ module.exports = {
         primaryLight: "#45556C",   
         secondary: "#90A1B9",
         black: "0F172B",
+        blackLight: "#62748E",
         borderColor: "#E2E8F0",
+        sub: "#1C398E",
+        subLight: "#EFF6FF",
+        borderSubColor: "#DBEAFE"
       },
     },
   },
