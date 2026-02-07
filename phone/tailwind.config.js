@@ -19,6 +19,7 @@ module.exports = {
         bgIcon: "#F1F5F9",
         mapIconBlue: "#155DFC",
         red: "#FB2C36",
+        orange: "#F54900",
       },
     },
   },

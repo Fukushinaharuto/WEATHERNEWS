@@ -1,16 +1,35 @@
-import SafeScreen from "@/components/safe-screen";
-import { ScrollView, View, Text, TouchableOpacity, Image } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { useState } from "react";
 import { arrows, locations } from "@/components/icons";
+import SafeScreen from "@/components/safe-screen";
 import { colors } from "@/lib/colors";
-
+import { useIndexLocation } from "@/lib/hooks/useLocation";
+import { useUpdateCity } from "@/lib/hooks/useUser";
+import { useUserStore } from "@/store/useUserStore";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function MunicipalitiesScreen() {
   const { prefecture } = useLocalSearchParams<{ prefecture: string }>();
-  const cities = ["1","2","3","4","5","6","7","8","9","10","11","12","13"];
   const [selectedCity, setSelectedCity] = useState("");
   const [footerHeight, setFooterHeight] = useState(0);
+  const { submit: updateCitySubmit, isLoading: updateCityIsLoading } = useUpdateCity();
+  const user = useUserStore((s) => s.user);
+
+  useEffect(() => {
+    if (user) {
+      setSelectedCity(user.city_name);
+    } else {
+      setSelectedCity("");
+    }
+  }, [prefecture]);
+  
+  const {
+    cities,
+    isLoading: indexLocationIsLoading,
+    mutate,
+  } = useIndexLocation(prefecture);
+
+  if (updateCityIsLoading) return;
 
   return (
     <SafeScreen changeBackgroundColor="white">
@@ -34,23 +53,27 @@ export default function MunicipalitiesScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: footerHeight }}
       >
-        {cities.map((city) => (
-          <TouchableOpacity
-            key={city}
-            className={`px-4 py-5 rounded-2xl mt-2 border border-borderColor ${
-              selectedCity === city ? "bg-primary" : "bg-white"
-            }`}
-            onPress={() => setSelectedCity(city)}
-          >
-            <Text 
-              className={`text-primary font-bold ${
-                selectedCity === city && "text-white"
+        {indexLocationIsLoading ? (
+          <Text className="text-center mt-4">読み込み中...</Text>
+        ) : (
+          cities.map((city) => (
+            <TouchableOpacity
+              key={city}
+              className={`px-4 py-5 rounded-2xl mt-2 border border-borderColor ${
+                selectedCity === city ? "bg-primary" : "bg-white"
               }`}
+              onPress={() => setSelectedCity(city)}
             >
-              {city}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                className={`text-primary font-bold ${
+                  selectedCity === city ? "text-white" : ""
+                }`}
+              >
+                {city}
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
       {/* フッター */}
@@ -72,7 +95,7 @@ export default function MunicipalitiesScreen() {
             selectedCity ? "bg-primary" : "bg-primary/40"
           }`}
           disabled={!selectedCity}
-          onPress={() => router.push("/post")}
+          onPress={() => updateCitySubmit({ cityName: selectedCity })}
         >
           <Text className="text-white font-bold text-center text-lg">
             {selectedCity

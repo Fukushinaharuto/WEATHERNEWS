@@ -8,6 +8,7 @@ export type Colors = {
   locationIconGray: string;
   blackLight: string;
   red: string;
+  orange: string;
 };
 export const colors: Colors = {
   primary: "#314158",
@@ -19,4 +20,5 @@ export const colors: Colors = {
   locationIconGray: "#687076",
   blackLight: "#62748E",
   red: "#FB2C36",
+  orange: "#F54900",
 };

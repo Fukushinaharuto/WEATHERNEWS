@@ -3,23 +3,17 @@ import { HelpMap } from "@/components/help-map";
 import { helps } from "@/components/icons";
 import SafeScreen from "@/components/safe-screen";
 import { colors } from "@/lib/colors";
-import { router } from "expo-router";
+import { useCreateAssignments, useIndexHelp } from "@/lib/hooks/useHelp";
+import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
 import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function Index() {
-  
-  
+export default function Index() {  
   const insets = useSafeAreaInsets();
-  const tasks = [
-    { id: 1, name: "田中太郎", time: "3分前", status: "waiting", latitude: 35.2005, longitude: 137.0317, is_helped: true },
-    { id: 2, name: "佐藤花子", time: "8分前", status: "in_progress", latitude: 35.2365, longitude: 137.0317, is_helped: false },
-    { id: 3, name: "鈴木一郎", time: "15分前", status: "waiting", latitude: 35.2600, longitude: 137.0317, is_helped: true },
-    { id: 4, name: "福品", time: "8分前", status: "in_progress", latitude: 35.2901, longitude: 137.0317, is_helped: false },
-    { id: 5, name: "epona", time: "15分前", status: "waiting", latitude: 35.2203, longitude: 137.0317, is_helped: false },
-    { id: 6, name: "公民館", time: "15分前", status: "waiting", latitude: 35.2264, longitude: 137.0460, is_helped: false },
-  ];
+  const { city_id } = useLocalSearchParams<{ city_id: string }>();
+  const { tasks, isLoading: indexHelpIsLoading } = useIndexHelp(Number(city_id));
+  const { submit, isLoading } = useCreateAssignments();
   const [headerHeight, setHeaderHeight] = useState(0);
   const [footerHeight, setFooterHeight] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -35,7 +29,6 @@ export default function Index() {
     }
   };
 
-
   const openRoute = (lat: number, lng: number) => {
     const url = Platform.select({
       ios: `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`,
@@ -47,6 +40,7 @@ export default function Index() {
     }
   }
 
+  if (indexHelpIsLoading || isLoading) return;
   return (
     <>
     <SafeScreen changeBackgroundColor="white" paddingX={0}>
@@ -80,7 +74,7 @@ export default function Index() {
         }}
       >
         <View className="h-[300px] overflow-hidden">
-          <HelpMap handleMarker={handleMarker} selectedId={selectedId} setSelectedId={setSelectedId}/>
+          <HelpMap  markers={tasks} handleMarker={handleMarker} selectedId={selectedId} setSelectedId={setSelectedId}/>
         </View>
       </View>
 
@@ -114,41 +108,37 @@ export default function Index() {
                     isSelected ? "border-blue-500 bg-blue-50" : "border-borderColor bg-white"
                   }`}
                 >
-                  <View className="flex-row justify-between items-center mb-2">
-                    <View className="flex-row items-center gap-2">
-                      <View className="h-9 w-9 rounded-full bg-borderColor items-center justify-center">
-                        <helps.ProfileIcon size={24} color={colors.primary} />
-                      </View>
-                      <View>
-                        <Text className="font-bold">{task.name}</Text>
-                        <View className="flex-row items-center gap-1">
-                          <helps.TimeIcon size={12} color={colors.blackLight} />
-                          <Text className="text-blackLight text-xs">
-                            {task.time}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                    <View
-                      className={`px-2 py-1 rounded-full ${
-                        isWaiting ? "bg-orange-100" : "bg-blue-100"
-                      }`}
-                    >
-                      <Text
-                        className={`text-xs ${
-                          isWaiting ? "text-orange-600" : "text-blue-600"
-                        }`}
-                      >
-                        {isWaiting ? "対応待ち" : "対応中"}
-                      </Text>
+                  <View className="flex-row justify-start items-center mb-2">
+                    <View>
+                      <Text className="font-bold">{task.name}</Text>
                     </View>
                   </View>
 
-                  <View className="flex-row gap-2">
+                  <View className="flex-row items-center gap-2 mb-3">
                     <helps.LocationIcon size={16} color={colors.primaryLight} />
-                    <Text className="text-primaryLight text-sm mb-3">
-                      東京都新宿区...
+                    <Text className="text-primaryLight text-sm">
+                      {task.address}
                     </Text>
+                    <View className="flex-row items-center gap-1">
+                      <helps.TimeIcon size={12} color={colors.blackLight} />
+                      <Text className="text-blackLight text-xs">
+                        ・{task.createAt}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center gap-2 mb-3">
+                    {task.status === "waiting" ?  (
+                      <>
+                        <helps.TimeIcon size={14} color={colors.orange} />
+                        <Text className="text-sm text-orange font-bold">まだ誰も向かっていません</Text>
+                      </>
+                    ) : (
+                      <>
+                        <helps.HelperIcon size={14} color={colors.mapIconBlue} />
+                        <Text className="text-sm text-mapIconBlue font-bold">{task.helpersCount}人が向かっています</Text>
+                      </>
+                    )}
+                    
                   </View>
 
                   <View className="flex-row gap-2">
@@ -161,8 +151,11 @@ export default function Index() {
                     </TouchableOpacity>
 
                     {isWaiting && (
-                      <TouchableOpacity className="flex-1 bg-blue-500 rounded-lg py-2 items-center">
-                        <Text className="text-white font-bold">対応する</Text>
+                      <TouchableOpacity 
+                        className="flex-1 bg-blue-500 rounded-lg py-2 items-center"
+                        onPress={() => submit( Number(city_id) , task.id, )}
+                      >
+                        <Text className="text-white font-bold">向かう</Text>
                       </TouchableOpacity>
                     )}
                   </View>

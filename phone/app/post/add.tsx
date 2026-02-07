@@ -2,31 +2,33 @@ import { Footer } from "@/components/footer";
 import { ImageAddIcon, categories, locations } from "@/components/icons";
 import SafeScreen from "@/components/safe-screen";
 import { ShowImageModal } from "@/components/show-image-modal";
-import { CreatePostPayload, createPost } from "@/lib/api/post/create";
 import { colors } from "@/lib/colors";
+import { useCreatePost } from "@/lib/hooks/usePost";
+import { getCurrentLocation } from "@/lib/utils/get-current-location";
 import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import { useState } from "react";
 import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { mutate } from "swr";
-import useSWRMutation from "swr/mutation";
 
-export default function AddScreen() {
-  const { trigger, isMutating } = useSWRMutation(
-    "/posts",
-    (_url, { arg }: { arg: CreatePostPayload }) => createPost(arg)
-  );
-  
-  const onSubmit = async () => {
-    await trigger({
+export default function AddScreen() {  
+  const { submit, isLoading } = useCreatePost();
+
+  const handleSubmit = async () => {
+    const cityId = await SecureStore.getItemAsync("user_city");
+    console.log(cityId)
+    const { latitude, longitude } = await getCurrentLocation();
+    await submit({
       categoryId: selectedCategory,
       message,
-      images: images,
-      cityId: 1, // 改善：userに含まれているcityIdを使用する
+      images,
+      cityId: Number(cityId),
+      latitude: latitude,
+      longitude: longitude,
     });
-  
-    // 一覧を更新
-    mutate("/posts");
+
+    router.back(); // 例：投稿後に戻る
   };
   
   const insets = useSafeAreaInsets();
@@ -195,7 +197,7 @@ export default function AddScreen() {
               className={`flex justify-center items-center rounded-2xl py-6 mt-8
                 ${isPostEnabled ? "bg-primary opacity-100" : "bg-primary opacity-40"}
               `}
-              onPress={() => onSubmit()}
+              onPress={handleSubmit}
             >
               <Text className="text-white font-bold">投稿する</Text>
             </TouchableOpacity>

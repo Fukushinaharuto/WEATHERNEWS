@@ -1,10 +1,9 @@
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
-import { useState } from "react";
-import { Link } from "expo-router";
-import { login } from "@/lib/api/login";
-import { register } from "@/lib/api/register";
-import { colors } from "@/lib/colors";
 import { forms } from "@/components/icons/";
+import { colors } from "@/lib/colors";
+import { useLogin, useRegister } from "@/lib/hooks/useAuth";
+import { Link } from "expo-router";
+import { useState } from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export function FormCard() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
@@ -15,15 +14,22 @@ export function FormCard() {
     { id: "login" as const, label: "ログイン" },
     { id: "register" as const, label: "新規登録" },
   ];
-  const handleAuth = async() => {
+  const { submit: loginSubmit, isLoading: loginIsLoading } = useLogin();
+  const { submit: registerSubmit, isLoading: registerIsLoading } = useRegister();
+  const handleSubmit = () => {
     if (activeTab === "login") {
-      const response = await login({email, password});
-      console.log(response);
+      loginSubmit({
+        email,
+        password,
+      })
     } else {
-      const response = await register({name, email, password});
-      console.log(response);
+      registerSubmit({
+        name,
+        email,
+        password,
+      })
     }
-  }
+  };
   
   return (
     <View className="w-full justify-center items-center">
@@ -57,7 +63,7 @@ export function FormCard() {
               <TextInput
                 className="flex-1"
                 placeholder="田中太郎"
-                placeholderTextColor="{colors.textPlaceholder}"
+                placeholderTextColor={colors.textPlaceholder}
                 value={name}
                 onChangeText={setName}
               />
@@ -88,12 +94,12 @@ export function FormCard() {
             onChangeText={setPassword}
           />
         </View>
-
-        <TouchableOpacity className="bg-white rounded-md py-3">
-          <Text 
-            className="text-center font-bold text-primaryLight"
-            onPress={() => handleAuth()}
-          >  
+        <TouchableOpacity 
+          disabled={loginIsLoading || registerIsLoading}
+          className="bg-white rounded-md py-3"
+          onPress={handleSubmit}
+        >
+          <Text className="text-center font-bold text-primaryLight">  
             {activeTab === "login" ? "ログイン" : "アカウント作成"}
           </Text>
         </TouchableOpacity>
@@ -101,7 +107,7 @@ export function FormCard() {
     </View>
       {activeTab === "login" ? (
         <Link 
-          href="/" 
+          href="/post" 
           className="mt-4 underline decoration-2 underline-offset-4 decoration-white/50 text-white/70 hover:decoration-white"
         >
           <Text className="text-white/70 text-sm">ゲストとして続ける</Text>

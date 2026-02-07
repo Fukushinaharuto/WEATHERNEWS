@@ -1,10 +1,12 @@
 import { api } from "@/lib/api/api";
 
-export type CreatePostPayload = {
-    categoryId: number,
-    message: string,
-    images: string[],
-    cityId: number,
+export type CreatePostRequest = {
+  categoryId: number,
+  message: string,
+  images: string[],
+  cityId: number,
+  latitude: number,
+  longitude: number
 };
 
 type RNFile = {
@@ -13,7 +15,7 @@ type RNFile = {
   type: string;
 };
 
-export async function createPost(payload: CreatePostPayload) {
+export async function createPost(payload: CreatePostRequest) {
   const formData = new FormData();
 
   formData.append("category_id", String(payload.categoryId));
@@ -30,9 +32,8 @@ export async function createPost(payload: CreatePostPayload) {
     formData.append("imageFiles[]", file as any);
   });
 
-  return api<{ success: boolean }>("/posts", {
+  return api<{ success: boolean }>("/post", {
     method: "POST",
     body: formData,
-    // ⚠️ Content-Type は自分で指定しない（fetchが自動で付ける）
   });
 }

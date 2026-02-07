@@ -1,14 +1,9 @@
+import { IndexUserResponse } from '@/lib/api/user';
 import { create } from 'zustand';
 
-type User = {
-  id: number;
-  name: string;
-  email: string;
-};
-
 type UserStore = {
-  user: User | null;
-  setUser: (user: User) => void;
+  user: IndexUserResponse | null;
+  setUser: (user: IndexUserResponse) => void;
 };
 
 export const useUserStore = create<UserStore>((set) => ({

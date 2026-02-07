@@ -1,10 +1,28 @@
 import { LogoIcon, starts } from "@/components/icons";
 import SafeScreen from "@/components/safe-screen";
 import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 
+
 export default function Index() {
+  const [checking, setChecking] = useState(true);
+  useEffect(() => {
+    const checkLocation = async () => {
+      const location = await SecureStore.getItemAsync("user_city");
+      if (location) {
+        // 地域設定あり → post へ
+        router.replace(`/post?city_id=${location}`);
+      } 
+      setChecking(false);
+      return;
+    };
+
+    checkLocation();
+  }, []);
+
   const cards = [
     {
       icon: starts.ClothesIcon,
@@ -22,6 +40,8 @@ export default function Index() {
       description: "リアルタイムの混雑や遅延情報",
     },
   ];
+
+  if (checking) return;
 
   return (
     <SafeScreen changeBackgroundColor="darkBlue">
@@ -64,6 +84,18 @@ export default function Index() {
       <TouchableOpacity 
         className="flex justify-center items-center bg-white py-5 w-full rounded-2xl mt-10"
         onPress={() => {router.push("/auth"); }}
+      >
+        <Text className="text-primary font-bold">はじめる</Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        className="flex justify-center items-center bg-white py-5 w-full rounded-2xl mt-10"
+        onPress={() => {SecureStore.setItemAsync("user_city", "1");}}
+      >
+        <Text className="text-primary font-bold">はじめる</Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        className="flex justify-center items-center bg-white py-5 w-full rounded-2xl mt-10"
+        onPress={() => {router.push("/post/1")}}
       >
         <Text className="text-primary font-bold">はじめる</Text>
       </TouchableOpacity>

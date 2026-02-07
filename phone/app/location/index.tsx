@@ -1,17 +1,60 @@
+import { arrows, locations } from "@/components/icons";
 import SafeScreen from "@/components/safe-screen";
-import { ScrollView, View, Text, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
-import { prefectures } from '@/lib/prefectures'; 
 import { colors } from "@/lib/colors";
-import { locations, arrows } from "@/components/icons"
+import { useUpdateCity } from "@/lib/hooks/useUser";
+import { prefectures } from '@/lib/prefectures';
+import { getCurrentLocation } from "@/lib/utils/get-current-location";
+import * as Location from "expo-location";
+import { router } from "expo-router";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 export default function Index() {
+  const { submit: updateCitySubmit, isLoading: updateCityIsLoading } = useUpdateCity();
+  const handleUpdateCitySubmit = async () => {
+    try {
+      const { latitude, longitude } = await getCurrentLocation();
+      const geocode = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+      if (geocode.length === 0) {
+        Toast.show({
+          type: "error",
+          text1: "現在地の取得に失敗しました！",
+        });
+        return;
+      }
+      const address = geocode[0];
+      const city = address.city;
+      if (!city) {
+        Toast.show({
+          type: "error",
+          text1: "現在地の取得に失敗しました！",
+        });
+        return;
+      }
+      updateCitySubmit({ cityName: city})
+    } catch (e) {
+      console.error(e);
+      Toast.show({
+        type: "error",
+        text1: "現在地の取得に失敗しました！",
+      });
+      return;
+    }
+  };
 
+  if (updateCityIsLoading) return;
   return (
     <SafeScreen changeBackgroundColor="white">
       <Text className="text-black text-2xl font-bold mt-3">地域を選択</Text>
       <Text className="text-primaryLight mt-3">情報を確認したい都道府県を選んでください</Text>
-      <TouchableOpacity className="flex-row gap-5 items-center px-4 py-6 rounded-2xl mt-6 bg-white border border-borderColor">
+      <TouchableOpacity 
+        className="flex-row gap-5 items-center px-4 py-6 rounded-2xl mt-6 bg-white border border-borderColor"
+        onPress={handleUpdateCitySubmit}
+        disabled={updateCityIsLoading}
+      >
         <locations.CurrentLocationIcon size={24} color={colors.primary} />
         <View>
           <Text className="text-primary font-bold">現在地を使用</Text>

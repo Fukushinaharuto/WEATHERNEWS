@@ -1,15 +1,22 @@
 import { Footer } from "@/components/footer";
 import { badges, profiles } from "@/components/icons";
 import { colors } from "@/lib/colors";
+import { useIndexUserProfile } from "@/lib/hooks/useUser";
+import { useUserStore } from "@/store/useUserStore";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+
 
 
 export default function Index() {
   const insets = useSafeAreaInsets();
   const [headerHeight, setHeaderHeight] = useState(0);
   const [footerHeight, setFooterHeight] = useState(0);
+  const user = useUserStore((state) => state.user);
+  const { profile, isLoading: indexUserProfileIsLoading } = useIndexUserProfile();
   const [titles, setTitles] = useState([
     {
       id: "1",
@@ -56,6 +63,16 @@ export default function Index() {
     
   ]);
   
+  if (!user) {
+    Toast.show({
+      type: "error",
+      text1: "この機能を利用するにはログインが必須です。",
+    });
+    router.push("/auth");
+    return;
+  }
+  if (indexUserProfileIsLoading) return;
+  
   return (
     <View className="flex-1 bg-grayLight"> 
       <ScrollView 
@@ -77,38 +94,48 @@ export default function Index() {
           <Text className="text-white text-2xl font-bold">プロフィール</Text>
         </View>
         <View className="justify-center items-center gap-2">
-          <Image source={require('@/assets/images/icon.png')} className="w-20 h-20 rounded-full" />
-          <Text className="text-white text-lg font-bold">ユーザー名</Text>
-          <Text className="text-white/80 text-sm">渋谷・原宿エリア</Text>
-          <TouchableOpacity className="flex-row items-center py-2 self-center">
+          <TouchableOpacity>
+            <Image source={require('@/assets/images/icon.png')} className="w-20 h-20 rounded-full" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text className="text-white text-lg font-bold">{user.name}</Text>
+          </TouchableOpacity>
+          <Text className="text-white/80 text-sm">{user.cityName}エリア</Text>
+          <TouchableOpacity 
+            className="flex-row items-center py-2 self-center"
+            onPress={async () => {
+              router.replace("/location");
+            }}
+            >
             <Text className="text-white/90 leading-tight border-b border-borderColor">地域を変更</Text>
           </TouchableOpacity>
         </View>
       </View>
         <View
+          pointerEvents="box-none"
           className="flex-1"
           style={{
             paddingTop: Math.max(headerHeight - insets.top, 0),
             paddingBottom: Math.max(footerHeight - insets.bottom + 20, 0),
             paddingLeft: 20,
             paddingRight: 20,
-            zIndex: 30
+            zIndex: 10
           }}
         >  
           <View className="bg-white rounded-2xl flex-row justify-between items-center p-2 py-4 border border-borderColor shadow-[0_1px_3px_0px_rgba(0,0,0,0.1)]">
             <View className="flex-1 gap-2 items-center">
               <profiles.PostIcon size={18} color={colors.primary} />
-              <Text className="text-black">23</Text>
+              <Text className="text-black">{profile?.postCount}</Text>
               <Text className="text-xs text-blackLight">投稿数</Text>
             </View>
             <View className="flex-1 gap-2 items-center">
               <profiles.LikeIcon size={18} color={colors.primary} />
-              <Text className="text-black">153</Text>
+              <Text className="text-black">{profile?.likeCount}</Text>
               <Text className="text-xs text-blackLight">参考になった数</Text>
             </View>
             <View className="flex-1 gap-2 items-center">
               <profiles.LocationIcon size={18} color={colors.primary} />
-              <Text className="text-black">23</Text>
+              <Text className="text-black">{profile?.activeDays}</Text>
               <Text className="text-xs text-blackLight">アクティブ日数</Text>
             </View>
           </View>
@@ -151,31 +178,31 @@ export default function Index() {
             <View className="gap-2 my-2">
               <View className="gap-2 py-4 border-b border-borderColor">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-black font-bold">今日</Text>
-                  <Text className="text-mapIconBlue font-bold">+3</Text>
+                  <Text className="text-black font-bold">{profile?.latest[0].latestActiveDate}</Text>
+                  <Text className="text-mapIconBlue font-bold">+{profile?.latest[0].likeCount}</Text>
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-xs text-blackLight font-bold">2件投稿</Text>
+                  <Text className="text-xs text-blackLight font-bold">{profile?.latest[0].postCount}件投稿</Text>
                   <Text className="text-xs text-blackLight font-bold">参考になった</Text>
                 </View>
               </View>
               <View className="gap-2 py-4 border-b border-borderColor">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-black font-bold">今日</Text>
-                  <Text className="text-mapIconBlue font-bold">+3</Text>
+                  <Text className="text-black font-bold">{profile?.latest[1].latestActiveDate}</Text>
+                  <Text className="text-mapIconBlue font-bold">+{profile?.latest[1].likeCount}</Text>
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-xs text-blackLight font-bold">2件投稿</Text>
+                  <Text className="text-xs text-blackLight font-bold">{profile?.latest[1].postCount}件投稿</Text>
                   <Text className="text-xs text-blackLight font-bold">参考になった</Text>
                 </View>
               </View>
               <View className="gap-2 py-4">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-black font-bold">今日</Text>
-                  <Text className="text-mapIconBlue font-bold">+3</Text>
+                  <Text className="text-black font-bold">{profile?.latest[2].latestActiveDate}</Text>
+                  <Text className="text-mapIconBlue font-bold">+{profile?.latest[2].likeCount}</Text>
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-xs text-blackLight font-bold">2件投稿</Text>
+                  <Text className="text-xs text-blackLight font-bold">{profile?.latest[2].postCount}件投稿</Text>
                   <Text className="text-xs text-blackLight font-bold">参考になった</Text>
                 </View>
               </View>

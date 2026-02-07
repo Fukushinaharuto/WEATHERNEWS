@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 type ApiBody = Record<string, unknown> | FormData;
 
 type ApiOptions = {
-  method?: "GET" | "POST" | "PUT" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   body?: ApiBody;
 };
 
@@ -57,9 +57,18 @@ export async function api<T>(
     const json = text ? JSON.parse(text) : null;
 
     if (!res.ok) {
+      // 422: バリデーションエラー
+      if (res.status === 422 && json?.messages && Array.isArray(json.messages)) {
+        throw new HttpError(
+          422,
+          json.messages[0], // 先頭のメッセージだけ使う
+          json
+        );
+      }
+      // それ以外のエラー
       throw new HttpError(
         res.status,
-        json?.message ?? "通信エラーが発生しました",
+        "通信エラーが起きました",
         json ?? undefined
       );
     }
@@ -70,7 +79,5 @@ export async function api<T>(
       throw new HttpError(0, "通信がタイムアウトしました");
     }
     throw error;
-  } finally {
-    clearTimeout(timeout);
   }
 }

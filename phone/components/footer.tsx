@@ -1,6 +1,8 @@
 import { footers } from "@/components/icons";
 import { colors } from "@/lib/colors";
 import { router, usePathname } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 interface Props {
@@ -8,11 +10,20 @@ interface Props {
 }
 export function Footer({setFooterHeight}: Props) {
   const pathname = usePathname();
+  const [cityId, setCityId] = useState<string | null>(null);
+  useEffect(() => {
+    const loadCityId = async () => {
+      const id = await SecureStore.getItemAsync("user_city");
+      setCityId(id);
+    };
+    loadCityId();
+  }, []);
+
   const cards = [
     {
       icon: footers.MoveIcon,
       text: "ホーム",
-      href: "/post",
+      href: `/post?city_id=${cityId}`,
     },
     {
       icon: footers.PostAddIcon,

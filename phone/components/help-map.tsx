@@ -1,3 +1,4 @@
+import { IndexHelpResponse } from "@/lib/api/help";
 import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Text } from "react-native";
@@ -7,11 +8,12 @@ interface Props {
   handleMarker: (id: number) => void;
   selectedId: number | null;
   setSelectedId: (id: number) => void;
+  markers: IndexHelpResponse[];
 }
 
 type MarkerRef = React.ComponentRef<typeof Marker>;
 
-export function HelpMap({ handleMarker, selectedId, setSelectedId } : Props) {
+export function HelpMap({ handleMarker, selectedId, setSelectedId, markers } : Props) {
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -36,14 +38,14 @@ export function HelpMap({ handleMarker, selectedId, setSelectedId } : Props) {
       });
     })();
   }, []);
-  const markers = [
-    { id: 1, name: "田中太郎", time: "3分前", status: "waiting", latitude: 35.2005, longitude: 137.0317, is_helped: true },
-    { id: 2, name: "佐藤花子", time: "8分前", status: "in_progress", latitude: 35.2365, longitude: 137.0317, is_helped: false },
-    { id: 3, name: "鈴木一郎", time: "15分前", status: "waiting", latitude: 35.2600, longitude: 137.0317, is_helped: true },
-    { id: 4, name: "福品", time: "8分前", status: "in_progress", latitude: 35.2901, longitude: 137.0317, is_helped: false },
-    { id: 5, name: "epona", time: "15分前", status: "waiting", latitude: 35.2203, longitude: 137.0317, is_helped: false },
-    { id: 6, name: "公民館", time: "15分前", status: "waiting", latitude: 35.2264, longitude: 137.0460, is_helped: false },
-  ];
+  // const markers = [
+  //   { id: 1, name: "田中太郎", time: "3分前", status: "waiting", latitude: 35.2005, longitude: 137.0317, is_helped: true },
+  //   { id: 2, name: "佐藤花子", time: "8分前", status: "in_progress", latitude: 35.2365, longitude: 137.0317, is_helped: false },
+  //   { id: 3, name: "鈴木一郎", time: "15分前", status: "waiting", latitude: 35.2600, longitude: 137.0317, is_helped: true },
+  //   { id: 4, name: "福品", time: "8分前", status: "in_progress", latitude: 35.2901, longitude: 137.0317, is_helped: false },
+  //   { id: 5, name: "epona", time: "15分前", status: "waiting", latitude: 35.2203, longitude: 137.0317, is_helped: false },
+  //   { id: 6, name: "公民館", time: "15分前", status: "waiting", latitude: 35.2264, longitude: 137.0460, is_helped: false },
+  // ];
   const shinjukuPolygon = [
     { latitude: 35.705, longitude: 137.000 },
     { latitude: 35.690, longitude: 137.500 },
@@ -111,8 +113,8 @@ export function HelpMap({ handleMarker, selectedId, setSelectedId } : Props) {
             longitude: marker.longitude,
           }}
           title={marker.name}
-          description={marker.time}
-          pinColor={marker.is_helped ? "blue" : "orange"}
+          description={marker.createAt}
+          pinColor={marker.status == "in_progress" ? "blue" : "orange"}
           onPress={() => {
             setSelectedId(marker.id);
             handleMarker(marker.id);

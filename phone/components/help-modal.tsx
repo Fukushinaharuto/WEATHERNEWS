@@ -1,5 +1,9 @@
 import { CancelIcon, helps } from "@/components/icons";
 import { colors } from "@/lib/colors";
+import { useCreateHelp } from "@/lib/hooks/useHelp";
+import { getCurrentLocation } from "@/lib/utils/get-current-location";
+import * as Location from "expo-location";
+import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import {
   Keyboard,
@@ -12,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 type Props = {
   isOpen: boolean;
@@ -20,6 +25,7 @@ type Props = {
 
 export function HelpModal({ isOpen, setIsOpen }: Props) {
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const showSub = Keyboard.addListener("keyboardDidShow", () => {
@@ -34,6 +40,37 @@ export function HelpModal({ isOpen, setIsOpen }: Props) {
       hideSub.remove();
     };
   }, []);
+  const { submit: helpSubmit, isLoading: helpLoading } = useCreateHelp();
+  const handleHelpSubmit = async () => {
+    const city_id = SecureStore.getItemAsync("user_city");
+    const { latitude, longitude } = await getCurrentLocation();
+    const geocode = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude,
+    });
+    if (geocode.length === 0) {
+      Toast.show({
+        type: "error",
+        text1: "現在地の取得に失敗しました！",
+      });
+      return;
+    }
+    const g = geocode[0];
+    const address = [
+      g.region,
+      g.city,
+      g.subregion,
+      g.street,
+      g.name,
+    ].filter(Boolean).join("");
+    helpSubmit({
+      message: message,
+      city_id: Number(city_id),
+      address: address,
+      latitude: latitude,
+      longitude: longitude,
+    })
+  }
 
   const handleBackdropPress = () => {
     if (isKeyboardVisible) {
@@ -100,8 +137,8 @@ export function HelpModal({ isOpen, setIsOpen }: Props) {
                     className="bg-grayLight rounded-2xl p-4 mt-4 h-32 border border-borderColor"
                     placeholder="例：停電で困っています、怪我をしています..."
                     placeholderTextColor={colors.textPlaceholder}
-                    value={""}
-                    onChangeText={() => {}}
+                    value={message}
+                    onChangeText={(message) => {setMessage(message)}}
                     multiline
                     textAlignVertical="top"
                     numberOfLines={6}
@@ -113,7 +150,7 @@ export function HelpModal({ isOpen, setIsOpen }: Props) {
               </View>
               <TouchableOpacity
                 className="mx-5 py-4 rounded-2xl bg-red mt-3"
-                onPress={() => setIsOpen(false)}
+                onPress={handleHelpSubmit}
               >
                 <Text className="text-white font-bold text-center text-sm">
                   助け要請を送信する
