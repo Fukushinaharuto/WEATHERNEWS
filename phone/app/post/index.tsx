@@ -1,4 +1,3 @@
-
 import { CategoryFilterModal } from "@/components/category-filter-modal";
 import { Footer } from "@/components/footer";
 import { HelpModal } from "@/components/help-modal";
@@ -11,7 +10,7 @@ import { timeAgo } from "@/lib/utils/timeAgo";
 import { useUserStore } from "@/store/useUserStore";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -22,6 +21,7 @@ export type Category = {
   discription?: string;
   icon: React.FC<{ size: number; color: string }>;
 };
+
 export default function Index() {
   const user = useUserStore((state) => state.user);
   const { city_id } = useLocalSearchParams<{ city_id: string }>();
@@ -31,18 +31,31 @@ export default function Index() {
   const [isOpenHelpModal, setIsOpenHelpModal] = useState(false);
   const [isOpenCategoryModal, setIsOpenCategoryModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"all" | "rain" | "clothes" | "move" | "sun">("all");
+  const [refreshing, setRefreshing] = useState(false);
+  
   const categoryList: Category[] = [
     { key: "all", id: 0, label: "すべて", icon: NarrowDownIcon},
     { key: "rain", id: 1, label: "傘・雨", discription: "傘や雨具の情報", icon: categories.RainIcon },
     { key: "clothes",id: 2, label: "服装", discription: "今日の服装の参考に", icon: categories.ClothesIcon },
     { key: "move", id: 3,  label: "移動", discription: "交通・混雑状況", icon: categories.MoveIcon },
     { key: "sun", id: 4, label: "外での活動", discription: "外での活動情報", icon: categories.SunIcon },
-    
   ];
+  
   const categoryId = categoryList.find(cat => cat.key === selectedCategory)?.id ?? 0;
 
-  const { posts, cityName, weatherType, maxTemperature, minTemperature, isLoading: indexPostIsLoading } = useIndexPost(Number(city_id), categoryId);
+  const { posts, cityName, weatherType, maxTemperature, minTemperature, isLoading: indexPostIsLoading, mutate } = useIndexPost(Number(city_id), categoryId);
   const { submit: likeSubmit, isLoading: likeLoading } = useCreateLikePost();
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await mutate(); // SWRのデータを再取得
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleCategoryChange = (key: Category["key"]) => {
     setSelectedCategory(key);
@@ -63,6 +76,7 @@ export default function Index() {
         return <NarrowDownIcon size={20} color={colors.primaryLight} />;
     }
   }
+  
   const handleHelpIsOpen = () => {
     if (user){
       setIsOpenHelpModal(true);
@@ -73,9 +87,8 @@ export default function Index() {
       })
       router.push("/auth")
     }
-    
   }
-  console.log(cityName)
+
   return (
     <>
       <SafeScreen changeBackgroundColor="white">
@@ -105,6 +118,7 @@ export default function Index() {
             </View>
           </View>
         </View>
+        
         <View 
           className="flex-1"
           style={{
@@ -125,20 +139,28 @@ export default function Index() {
                 </Text>
               </TouchableOpacity>
             </View>
-            
           </View>
+          
           <ScrollView
             className="mt-3"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: Math.max(footerHeight - insets.bottom + 20, 0),
             }}
+            // ← RefreshControlを追加
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary} // iOS用の色
+                colors={[colors.primary]} // Android用の色
+              />
+            }
           >
             {indexPostIsLoading ? (
               <Text className="text-center mt-4">読み込み中...</Text>
             ) : (
               <View className="gap-2">
-                
                 {posts.map((post) => (
                   <TouchableOpacity 
                     onPress={() => router.push(`/post/${post.id}`)}
@@ -189,9 +211,10 @@ export default function Index() {
               </View>
             )}
           </ScrollView>
-          </View>
+        </View>
         <Footer setFooterHeight={setFooterHeight} />
       </SafeScreen>
+      
       <View
         style={{
           position: "absolute",
@@ -202,41 +225,40 @@ export default function Index() {
         }}
       >
         <View className="gap-4">
-        <TouchableOpacity
-          className="justify-center items-center"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.1,
-            shadowRadius: 15,
-            elevation: 8,
-            backgroundColor: "transparent",
-            borderRadius: 999,
-          }}
-          onPress={handleHelpIsOpen}
-        >
-          <helps.CaveatIcon size={60} color={colors.red} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            className="justify-center items-center"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.1,
+              shadowRadius: 15,
+              elevation: 8,
+              backgroundColor: "transparent",
+              borderRadius: 999,
+            }}
+            onPress={handleHelpIsOpen}
+          >
+            <helps.CaveatIcon size={60} color={colors.red} />
+          </TouchableOpacity>
 
-
-        <TouchableOpacity
-          className="justify-center items-center"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 10 }, 
-            shadowOpacity: 0.1,
-            shadowRadius: 15,
-            elevation: 8,
-            backgroundColor: "transparent",
-            borderRadius: 999,
-          }}
-          onPress={() => router.push(`/help?city_id=${city_id}`)}
-        >
-          <helps.NotificationIcon size={55} color={colors.primary} />
-        </TouchableOpacity>
-
+          <TouchableOpacity
+            className="justify-center items-center"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 10 }, 
+              shadowOpacity: 0.1,
+              shadowRadius: 15,
+              elevation: 8,
+              backgroundColor: "transparent",
+              borderRadius: 999,
+            }}
+            onPress={() => router.push(`/help?city_id=${city_id}`)}
+          >
+            <helps.NotificationIcon size={55} color={colors.primary} />
+          </TouchableOpacity>
         </View>
       </View>
+      
       <CategoryFilterModal
         isOpen={isOpenCategoryModal}
         onClose={() => setIsOpenCategoryModal(false)}
@@ -254,7 +276,6 @@ export default function Index() {
           userStatus={user.status}
         />
       )}
-
     </>
   );
 }

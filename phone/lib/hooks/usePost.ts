@@ -12,7 +12,7 @@ export function useIndexPost(city_id: number, category_id: number) {
   const longitude = useLocationStore((state) => state.longitude);
   const key =
     city_id
-      ? `/post?city_id=${city_id}`
+      ? `/post?city_id=${city_id}&category_id=${category_id}`
       : null;
     const { data, error, isLoading, mutate } = useSWR(key, async () => {
       return indexPost({
@@ -57,7 +57,6 @@ export function useCreatePost() {
   const [isLoading, setIsLoading] = useState(false);
     const submit = async (data: CreatePostRequest) => {
     setIsLoading(true);
-    const listKey = `/post?city_id=${data.cityId}`;
     const userProfileKey = "/user/profile";
     try {
       await createPost(data);
@@ -66,7 +65,7 @@ export function useCreatePost() {
         text1: "投稿しました！",
       });
       // フェッチしたデータで更新
-      mutate(listKey);
+      mutate((key) => typeof key === "string" && key.startsWith("/post?city_id="));
       mutate(userProfileKey);
     } catch (e: any) {
       if (e?.status === 422) {

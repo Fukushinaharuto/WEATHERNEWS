@@ -7,19 +7,20 @@ import { useCreateAssignments, useIndexHelp } from "@/lib/hooks/useHelp";
 import { timeAgo } from "@/lib/utils/timeAgo";
 import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
-import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Linking, Platform, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {  
   const insets = useSafeAreaInsets();
   const { city_id } = useLocalSearchParams<{ city_id: string }>();
-  const { tasks, isLoading: indexHelpIsLoading } = useIndexHelp(Number(city_id));
+  const { tasks, isLoading: indexHelpIsLoading, mutate } = useIndexHelp(Number(city_id));
   const { submit, isLoading } = useCreateAssignments();
   const [headerHeight, setHeaderHeight] = useState(0);
   const [footerHeight, setFooterHeight] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const itemLayouts = useRef<Record<number, number>>({});
+  const [refreshing, setRefreshing] = useState(false); 
 
   const handleMarker = (id: number) => {
     if (scrollRef.current) {
@@ -30,6 +31,16 @@ export default function Index() {
     }
   };
   
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await mutate(); // SWRのデータを再取得
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const openRoute = (lat: number, lng: number) => {
     const url = Platform.select({
@@ -91,7 +102,18 @@ export default function Index() {
           直近の助け要請 ({tasks.length}件)
         </Text>
 
-        <ScrollView showsVerticalScrollIndicator={false} ref={scrollRef}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          ref={scrollRef}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary} // iOS用の色
+              colors={[colors.primary]} // Android用の色
+            />
+          }
+        >
           {tasks.map((task) => {
             const isWaiting = task.status === "waiting";
             const isSelected = selectedId === task.id;
