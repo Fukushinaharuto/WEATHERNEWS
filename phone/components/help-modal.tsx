@@ -2,7 +2,9 @@ import { CancelIcon, helps } from "@/components/icons";
 import { colors } from "@/lib/colors";
 import { useCreateHelp, useUpdateHelped } from "@/lib/hooks/useHelp";
 import { getCurrentLocation } from "@/lib/utils/get-current-location";
+import { useUserStore } from "@/store/useUserStore";
 import * as Location from "expo-location";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Keyboard,
@@ -81,6 +83,21 @@ export function HelpModal({ isOpen, setIsOpen, city_id, userStatus }: Props) {
       setIsOpen(false); // キーボード出てなければモーダル閉じる
     }
   };
+
+  const user = useUserStore((state) => state.user); 
+  useEffect(() => {
+    if (!user) {
+      Toast.show({
+        type: "error",
+        text1: "この機能を利用するにはログインが必須です。",
+      });
+      router.push("/auth");
+    }
+  }, [user]);
+
+  if (!user) {
+    return null; // 何も描画しない
+  }
 
   return (
     <Modal

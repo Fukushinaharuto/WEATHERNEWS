@@ -5,10 +5,12 @@ import SafeScreen from "@/components/safe-screen";
 import { colors } from "@/lib/colors";
 import { useCreateAssignments, useIndexHelp } from "@/lib/hooks/useHelp";
 import { timeAgo } from "@/lib/utils/timeAgo";
+import { useUserStore } from "@/store/useUserStore";
 import { router, useLocalSearchParams } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Linking, Platform, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 export default function Index() {  
   const insets = useSafeAreaInsets();
@@ -52,8 +54,18 @@ export default function Index() {
       Linking.openURL(url);
     }
   }
+  const user = useUserStore((state) => state.user); 
+  useEffect(() => {
+    if (!user) {
+      Toast.show({
+        type: "error",
+        text1: "この機能を利用するにはログインが必須です。",
+      });
+      router.push("/auth");
+    }
+  }, [user]);
 
-  if (indexHelpIsLoading || isLoading) return;
+  if (indexHelpIsLoading || isLoading || !user) return null;
   return (
     <>
     <SafeScreen changeBackgroundColor="white" paddingX={0}>
